@@ -1,0 +1,8 @@
+[{<<"nitrogen_core">>,
+  {git,"git@github.com:nitrogen/nitrogen_core",
+       {ref,"4a48562975d5921f2debfee1c73987fa5ae9ee6c"}},
+  0},
+ {<<"rekt">>,
+  {git,"git://github.com/nitrogen/rekt",
+       {ref,"311ff756a3f33543fe4b8a80d4642f204a6bcec4"}},
+  1}].
