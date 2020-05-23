@@ -6,21 +6,24 @@
     reflect/0,
     render_element/1,
     refresh/1,
-    event/1
+    event/1,
+    set_refresh_postback_page/2
 ]).
 
+
 -record(paginate_postback, {
-        delegate, 
-        mode=normal,
-        tag,
-        page=1,
-        search_text_id,
-        reset_button_id,
-        page_id,
-        bottom_page_id,
-        perpage_id,
-        body_id
-    }).
+    delegate, 
+    mode=normal,
+    tag,
+    page=1,
+    search_text_id,
+    reset_button_id,
+    page_id,
+    bottom_page_id,
+    perpage_id,
+    body_id
+}).
+
 
 reflect() -> record_info(fields, paginate).
 
@@ -31,16 +34,14 @@ render_element(Rec = #paginate{}) ->
     BottomPageID = wf:temp_id(),
     PerPageID = wf:temp_id(),
     ResetButtonID = wf:temp_id(),
-    
+
     Tag = Rec#paginate.tag,
     Delegate = Rec#paginate.delegate,
     CurPage = Rec#paginate.page,
     PerPage = Rec#paginate.perpage,
     ID = Rec#paginate.id,
-    SearchButtonID = Rec#paginate.search_button_id,
     ShowPerPage = Rec#paginate.show_perpage,
     ShowSearch = Rec#paginate.show_search,
-    MiddleFilters = Rec#paginate.middle_filters,
     ShowEither = ShowPerPage orelse ShowSearch,
 
     Postback = #paginate_postback{
@@ -62,12 +63,11 @@ render_element(Rec = #paginate{}) ->
     PostbackEvents = #event{type=click, delegate=?MODULE, postback=Postback},
 
     NumPages = total_pages(Rec#paginate.num_items,Rec#paginate.perpage),
-    
+
     PageSelectorPanel = #panel{
         class=paginate_page_list,
         body=page_selector(CurPage, NumPages, Postback)
     },
-
     Terms = #panel{
         id=ID,
         class=[paginate, Rec#paginate.class],
@@ -75,44 +75,7 @@ render_element(Rec = #paginate{}) ->
         body=[
             #panel{show_if=ShowEither, class=paginate_header,body=[
                 #singlerow{cells=[
-                    #tablecell{body=[
-                        #panel{show_if=ShowSearch, class=paginate_header_search,body=[
-                            #panel{class='col-lg-4', body=[
-                                #panel{class='input-group',body=[
-                                    #textbox{
-                                        class=['form-control', paginate_search],
-                                        id=SearchTextID,
-                                        postback=Postback,
-                                        delegate=?MODULE
-                                    },
-                                    #span{class='input-group-btn',body=[
-                                        #button{
-                                            id=SearchButtonID,
-                                            text=Rec#paginate.search_button_text,
-                                            postback=Postback,
-                                            delegate=?MODULE,
-                                            class=[btn,'btn-default']
-                                        },
-                                        #button{
-                                            id=ResetButtonID,
-                                            text=Rec#paginate.reset_button_text,
-                                            class=[paginate_reset_button,btn,'btn-warning'],
-                                            style="display:none",
-                                            click=[
-                                                #fade{},
-                                                #set{target=SearchTextID,value=""},
-                                                #event{delegate=?MODULE,postback=Postback#paginate_postback{mode=reset}}
-                                            ]
-                                        }
-                                    ]}
-                                ]}
-                            ]}
-                        ]}
-                    ]},
-                    #tablecell{class=paginate_middle_filters, body=MiddleFilters},
-                    #tablecell{body=[
-                        #spinner{class=paginate_spinner}
-                    ]},
+                    #tablecell{body=[#spinner{class=paginate_spinner}]},
                     #tablecell{body=[
                         #panel{show_if=ShowPerPage, class=paginate_perpage_wrapper,body=[
                             #dropdown{
@@ -141,15 +104,13 @@ page_selector(_, 0, _) ->
 page_selector(_, 1, _) ->
     [];
 page_selector(Selected, NumPages, Postback) ->
-    ["Pages: ",draw_page_links(Selected, Postback, NumPages)].
+    [draw_page_links(Selected, Postback, NumPages)].
 
-%draw_page_links(Selected, Postback, NumPages) =< 9 ->
-%    [[" ",page_link(Current, Selected, Postback)] || Current <- lists:seq(1, NumPages)];
 draw_page_links(Selected, Postback, NumPages) ->
     ToDraw = [1, 2,
-              Selected - 1 , Selected, Selected + 1,
-              NumPages-1, NumPages],
-    
+        Selected - 1 , Selected, Selected + 1,
+        NumPages-1, NumPages],
+
     draw_page_links_worker(Selected, 1, NumPages, Postback, ToDraw, true).
 
 draw_page_links_worker(_, Current, NumPages, _, _, _) when Current > NumPages ->
@@ -173,7 +134,7 @@ page_link(Current, _Selected, Postback) ->
         postback=Postback#paginate_postback{page=Current},
         delegate=?MODULE
     }.
-   
+
 total_pages(_, undefined) ->
     1;
 total_pages(TotalItems, PerPage) ->
@@ -185,21 +146,25 @@ set_refresh_postback(Tag,Postback) ->
 get_refresh_postback(Tag) ->
     wf:state({paginate_refresh_postback,Tag}).
 
+set_refresh_postback_page(Tag, Page) ->
+    PB = get_refresh_postback(Tag),
+    PB#paginate_postback{page=Page}.
+
 refresh(Tag) ->
     Postback = get_refresh_postback(Tag),
     event(Postback).
 
 event(Postback = #paginate_postback{
-                mode=Mode,
-                perpage_id=PerPageID,
-                search_text_id=SearchTextID,
-                reset_button_id=ResetButtonID,
-                body_id=BodyID,
-                page_id=PageID,
-                bottom_page_id=BottomPageID,
-                tag=Tag,
-                page=Page,
-                delegate=Delegate}) ->
+    mode=Mode,
+    perpage_id=PerPageID,
+    search_text_id=SearchTextID,
+    reset_button_id=ResetButtonID,
+    body_id=BodyID,
+    page_id=PageID,
+    bottom_page_id=BottomPageID,
+    tag=Tag,
+    page=Page,
+    delegate=Delegate}) ->
     PerPage = wf:depickle(wf:q(PerPageID)),
 
     SearchText = case Mode of
@@ -214,9 +179,9 @@ event(Postback = #paginate_postback{
     Module = wf:coalesce([Delegate,wf:page_module()]),
 
     case Module:paginate_event(Tag, SearchText, PerPage, Page) of
-        #paginate_event{body=NewBody, items=NewItems} ->
+        #paginate_event{body=NewBody, items=NewItems, page=ThisPage} ->
             TotalPages = total_pages(NewItems, PerPage),
-            PageSelector = page_selector(Page, TotalPages, Postback),
+            PageSelector = page_selector(ThisPage, TotalPages, Postback),
 
             wf:update(BodyID, NewBody),
             wf:update(PageID, PageSelector),

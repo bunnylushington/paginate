@@ -17,5 +17,6 @@
 
 -record(paginate_event, {
 		body=[]							:: body(),
-		items=0							:: integer()
+		items=0							:: integer(),
+    page=1              :: integer()
 	}).
