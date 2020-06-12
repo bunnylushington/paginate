@@ -125,14 +125,26 @@ draw_page_links_worker(Selected, Current, NumPages, Postback, ToDraw, WasLastDra
     end,
     [Elipsis, RenderedItem, draw_page_links_worker(Selected, Current+1, NumPages, Postback, ToDraw, DrawThis)].
 
+
+%%% These used to be #link{} not #{} button.  Unfortunately the
+%%% default URL is "javascript:" which doesn't play nicely with a
+%%% relatively strict content-security-policy.  (In fairness, it
+%%% didn't actually affect functionality but we racked up a boatload
+%%% of errors and that didn't seem right.)  The buttons seem to work
+%%% just fine; however, they're formatted with Bootstrap classes, so
+%%% BS should probably be installed if it's going to look like much.
 page_link(Selected, Selected, _Postback) ->
-    #span{class=paginate_current, text=wf:to_list(Selected)};
+  #button{
+     text=wf:to_list(Selected),
+     class="paginate_current btn btn-link",
+     disabled=true
+    };
 page_link(Current, _Selected, Postback) ->
-    #link{
-        text=wf:to_list(Current),
-        class=paginate_page,
-        postback=Postback#paginate_postback{page=Current},
-        delegate=?MODULE
+  #button{
+     text=wf:to_list(Current),
+     class="paginate_page btn btn-link",
+     postback=Postback#paginate_postback{page=Current},
+     delegate=?MODULE
     }.
 
 total_pages(_, undefined) ->
