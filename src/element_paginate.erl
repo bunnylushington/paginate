@@ -12,7 +12,7 @@
 
 
 -record(paginate_postback, {
-    delegate, 
+    delegate,
     mode=normal,
     tag,
     page=1,
@@ -24,6 +24,7 @@
     body_id
 }).
 
+-postback_security(none).
 
 reflect() -> record_info(fields, paginate).
 
@@ -206,6 +207,3 @@ event(Postback = #paginate_postback{
         _ ->
             throw({invalid_event_response,"Response from ~p:paginate_event/4 must be a #paginate_event record"})
     end.
-
-
-
